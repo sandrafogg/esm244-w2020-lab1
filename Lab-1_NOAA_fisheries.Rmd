@@ -81,3 +81,19 @@ ggsave(plot = salmon_landings_graph,
        height = 5, width = 8)
 ```
 
+Make a Table
+```{r}
+# make table
+salmon_first_5 <- salmon_summary %>% 
+  head(5) 
+
+```
+
+Make a Kable Table
+```{r}
+salmon_neat <- kable(salmon_first_5) %>% 
+  kable_styling(bootstrap_options = "striped",
+                full_width = FALSE)
+salmon_neat
+```
+

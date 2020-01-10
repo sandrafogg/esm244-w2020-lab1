@@ -1,0 +1,83 @@
+---
+title: "Lab-1-01.09.20"
+author: "Sandra Fogg"
+date: "1/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Command + option + i creates new code chunk
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(kableExtra)
+```
+
+Read in NOAA Fisheries Data
+```{r}
+# read in csv
+# us_landings <- read_csv("data/noaa_fisheries.csv") using the data/ can only do downstream
+# instead we use the "here" package
+us_landings <- read_csv(here("data", "noaa_fisheries.csv"))
+
+```
+
+Clean the Data
+```{r}
+# remove spaces by making snake case - clean_names from janitor
+# turn to different case (not all capitals) - for state you can overwrite with the lowercase
+# remove species name with common - mutate 
+# get rid of dollar sign
+# make everything in tidy version
+
+us_landings_tidy <- us_landings %>%
+  clean_names() %>% 
+  mutate(state = str_to_lower(state),
+         afs_name = str_to_lower(afs_name)) %>% 
+  mutate(dollars_usd = parse_number(dollars_usd)) 
+
+
+# leave original data before continuing to wrangle
+```
+
+Continue Wrangling for Salmon
+```{r}
+# aggregate means its comibined species so need to filter out
+salmon_landings <- us_landings_tidy %>% 
+  mutate(afs_clean = str_remove(afs_name, pattern = "aggregate")) %>% 
+  filter(str_detect(afs_clean, pattern = "salmon")) %>% 
+  separate(afs_clean, into = c("group", "species"), sep = ",")
+```
+
+Find Grouped Summary Data
+```{r}
+# Find annual total US landings and $$$ value for each species of salmon
+
+salmon_summary <- salmon_landings %>% 
+  group_by(year, species) %>% 
+  summarize(
+    tot_landings = sum(landings_pounds),
+    tot_value = sum(dollars_usd)
+  )
+```
+
+Graph Summary Salmon Data
+```{r}
+salmon_landings_graph <- ggplot(data = salmon_summary, 
+                                aes(x = year, y = tot_landings)) +
+  geom_line(aes(color = species)) + 
+  theme_classic()
+```
+
+Export with ggsave
+```{r}
+# put into figures folder
+ggsave(plot = salmon_landings_graph, 
+       here("figures", "us_salmon_sf.png"),
+       height = 5, width = 8)
+```
+
